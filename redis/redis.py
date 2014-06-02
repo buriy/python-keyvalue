@@ -1,5 +1,32 @@
 # coding: utf-8
-import re
+
+
+class RedisTimedStore(object):
+    def __init__(self, db, prefix, timeout=None):
+        self.db = db
+        self.prefix = prefix
+        self.timeout = timeout  # in seconds
+
+
+    def get(self, query):
+        return self.db.get(self.prefix+query)
+
+    
+    def get_many(self, queries):
+        if not queries:
+            return {}
+        return zip(queries, self.db.mget([self.prefix+q for q in queries]))
+    
+    
+    def put(self, query):
+        self.db.set(self.prefix+query, ex=self.timeout)
+
+
+    def put_many(self, queries):
+        if not queries: return
+        p = self.db.pipeline()
+        #FIXME
+
 
 
 class RedisHStore(object):
@@ -27,10 +54,11 @@ class RedisHStore(object):
             self.db.hmset(self.prefix, queries)
 
 
+
 class RedisZStore(object):
     def __init__(self, db, prefix, max_score=1e14, min_score=10):
         self.db = db
-        self.prefix = prefix + ':'
+        self.prefix = prefix
         self.max_score = max_score
         self.min_score = min_score
 
@@ -47,15 +75,3 @@ class RedisZStore(object):
         if v == None or v < self.min_score:
             return None
         return v
-
-
-class RulesSetStore(object):
-    def __init__(self, db, prefix):
-        self.db = db
-        self.prefix = prefix + ':'
-    
-
-    def get(self, query):
-        min_score, max_score, q = query 
-        data = self.db.zrevrangebyscore(self.prefix + str(query), max_score, min_score, withscores=True)
-        return data

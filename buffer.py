@@ -1,12 +1,9 @@
-from cPickle import HIGHEST_PROTOCOL, loads, dumps
-from zlib import decompress, compress
-
-from decorator import Decorator, NOTFOUND
+from keyvalue.cache import Decorator
 
 
-class WriteGrouper(Decorator):
+class BufferedWriter(Decorator):
     def __init__(self, db, group_size=2000):
-        super(WriteGrouper, self).__init__(db)
+        super(BufferedWriter, self).__init__(db)
         self.cache = {}
         self.group_size = group_size
 

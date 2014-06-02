@@ -1,5 +1,6 @@
 import concurrent.futures as futures
-from decorator import Decorator, ERROR
+from keyvalue.cache import Decorator, ERROR
+import sys
 
 def uniq(seq):
     s = set()
@@ -19,30 +20,11 @@ def parallelize(func, queries, max_workers=5, timeout=None, trap_exceptions=True
             q = tasks[future]
             if future.exception() is not None:
                 if not trap_exceptions:
-                    raise future.exception()
+                    raise future.exception(), None, sys.exc_info()[2]
                 results[q] = ERROR(future.exception())
             else:
                 results[q] = future.result()
     return results
-    
-    
-class ConsequentReader(Decorator):
-    def __init__(self, db, trap_exceptions=True):
-        super(ConsequentReader, self).__init__(db)
-        self.trap_exceptions = trap_exceptions
-        
-
-    def get_many(self, keys):
-        results = {}
-        misses = []
-        for q in keys:
-            try:
-                results[q] = self.get(q)
-            except Exception, e:
-                if not self.trap_exceptions:
-                    raise
-                results[q] = ERROR(e)
-        return results
 
 
 
@@ -56,6 +38,7 @@ class ParallelReader(Decorator):
     def get_many(self, keys):
         return parallelize(self.get, keys, max_workers=self.workers,
                            trap_exceptions=self.trap_exceptions)
+
 
 
 class ParallelWriter(Decorator):

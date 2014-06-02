@@ -1,75 +1,51 @@
-import cPickle
-from os.path import os
-import urllib
-
-from decorator import Decorator, NOTFOUND
+class ERROR(Exception): pass
+class NOTFOUND: pass
 
 
-DEBUG = False
+class Decorator(object):
+    def __init__(self, db):
+        self.db = db
 
-class Cache(Decorator):
-    def get(self, query):
-        value = self.check(query)
-        if value is NOTFOUND:
-            value = self.db.get(query)
-            self.save(query, value)
-        return value
+        for name in dir(db):
+            if callable(getattr(db, name)):
+                if not hasattr(self, name) and hasattr(db, name):
+                    setattr(self, name, getattr(db, name))
 
-    def get_many(self, queries):
-        results = {}
-        misses = []
-        for q in queries:
-            v = self.check(q)
-            if v is NOTFOUND:
-                misses.append(q)
-            else:
-                results[q] = v
-        for k, v in self.db.get_many(queries).iteritems():
-            self.save(k, v)
-            results[k] = v
-        return results
 
     def __repr__(self):
         return "<%s for %r>" % (self.__class__.__name__, self.db)
 
 
-class FileCache(Cache):
-    def __init__(self, db, path, clean=False):
-        super(FileCache, self).__init__(db)
-        self.path = path
-        self.clean = clean
 
-    def check(self, query):
-        fn = self.path % self.fn(query)
-        if self.clean and os.path.exists(fn):
-            if DEBUG: print "Removing", fn
-            os.remove(fn)
-        if os.path.exists(fn):
-            if DEBUG: print "Found", fn
-            return cPickle.load(open(fn, 'rb'))
-        return NOTFOUND
+class Cache(Decorator):
+    def __init__(self, db, cache):
+        super(Cache, self).__init__(db)
+        self.cache = cache
 
-    def save(self, query, value):
-        fn = self.path % self.fn(query)
-        cPickle.dump(value, open(fn, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL)
+    
+    def get(self, key):
+        value = self.cache.get(key)
+        if value is NOTFOUND or value is ERROR:
+            value = self.db.get(key)
+            self.cache.put(key, value)
+        return value
 
-
-    def fn(self, query):
-        query = str(query)
-        query = urllib.quote(query, safe="/: \'")
-        query = query.replace("/", '-').replace(':', '_').replace(' ', '_').replace("'", '_').decode('utf-8', 'ignore')
-        # print "Using FN for caching:", query
-        parts = query.split('_')
-        r = []
-        for p in parts:
-            if p.upper() == p.lower():  # upper
-                r.append(p)
-            elif p.upper() == p:  # upper
-                r.append('u' + p)
-            elif p.title() == p:  # title
-                r.append('t' + p)
-            elif p.lower() == p:  # title
-                r.append('l' + p)
+    
+    def get_many(self, keys):
+        results = {}
+        misses = []
+        for key, value in self.cache.get_many(keys).iteritems():
+            if value is NOTFOUND or value is ERROR:
+                misses.append(key)
             else:
-                r.append('m' + p)
-        return '_'.join(r)
+                results[key] = value
+        
+        pairs = self.db.get_many(keys)
+        self.cache.put_many(pairs)
+        for k, v in pairs.iteritems():
+            results[k] = v
+        return results
+
+
+    def __repr__(self):
+        return "<%s: %r with %s>" % (self.__class__.__name__, self.cache, self.db)
