@@ -3,7 +3,6 @@ from keyvalue.cache import ERROR
 
 class SimpleKV(object):
     trap_exceptions = False
-        
 
     def get_many(self, keys):
         results = {}
@@ -16,11 +15,10 @@ class SimpleKV(object):
                 results[q] = ERROR(e)
         return results
 
-
     def put_many(self, pairs):
-        for k,v in pairs.iteritems():
+        for k, v in pairs.iteritems():
             try:
                 self.put(k, v)
-            except Exception, _e:
+            except Exception:
                 if not self.trap_exceptions:
                     raise

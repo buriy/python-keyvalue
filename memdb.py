@@ -1,6 +1,7 @@
 from keyvalue.cache import NOTFOUND
 from keyvalue.simple import SimpleKV
 
+
 class MemoryDB(SimpleKV):
     def __init__(self):
         self.cache = {}

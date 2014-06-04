@@ -11,7 +11,6 @@ class Packer(Decorator):
             val = loads(decompress(val))
         return val
 
-
     def get_many(self, keys):
         items = self.db.get_many(keys)
         for key in items.keys():
@@ -20,13 +19,11 @@ class Packer(Decorator):
                 items[key] = loads(decompress(val))
         return items
 
-
     def put(self, key, val):
         if val is not None:
             val = compress(dumps(val, protocol=HIGHEST_PROTOCOL))
         self.db.put(key, val)
         return val
-
 
     def put_many(self, queries):
         queries = queries.copy()

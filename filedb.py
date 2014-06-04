@@ -11,7 +11,6 @@ class FileDB(SimpleKV):
         self.path = path
         self.clean = clean
         self.missing = missing
-        
 
     def get(self, key):
         fn = self.path % self._fn(key)
@@ -21,7 +20,6 @@ class FileDB(SimpleKV):
             return cPickle.load(open(fn, 'rb'))
         return self.missing
 
-
     def put(self, key, value):
         fn = self.path % self._fn(key)
         if value is self.missing:
@@ -29,9 +27,11 @@ class FileDB(SimpleKV):
         else:
             cPickle.dump(value, open(fn, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL)
 
-
     def _fn(self, query):
-        query = unicode(query)
+        if not isinstance(query, (str, unicode)):
+            query = unicode(query)
+        if not isinstance(query, str):
+            query = query.encode('utf-8', 'ignore')
         query = urllib.quote(query, safe="/: \'")
         query = query.replace("/", '_').replace(':', '_').replace(' ', '_').replace("'", '_')
         query = query.encode('utf-8')
