@@ -1,12 +1,20 @@
-class ERROR(Exception):
+class KVFailure(object):
     pass
 
 
-class NOTFOUND:
+class KVNotFound(KVFailure):
+    def __repr__(self):
+        return "<NOTFOUND>"
+
+
+NOTFOUND = KVNotFound()
+
+
+class KVReadError(Exception, KVFailure):
     pass
 
 
-class Decorator(object):
+class KVDecorator(object):
     def __init__(self, db):
         self.db = db
 
@@ -19,14 +27,15 @@ class Decorator(object):
         return "<%s for %r>" % (self.__class__.__name__, self.db)
 
 
-class Cache(Decorator):
-    def __init__(self, db, cache):
+class Cache(KVDecorator):
+    def __init__(self, db, cache, save_none=False):
         super(Cache, self).__init__(db)
         self.cache = cache
+        self.save_none = save_none
 
     def get(self, key):
         value = self.cache.get(key)
-        if value is NOTFOUND or value is ERROR:
+        if isinstance(value, KVFailure) or (value is None and not self.save_none):
             value = self.db.get(key)
             self.cache.put(key, value)
         return value
@@ -34,14 +43,17 @@ class Cache(Decorator):
     def get_many(self, keys):
         results = {}
         misses = []
-        for key, value in self.cache.get_many(keys).iteritems():
-            if value is NOTFOUND or value is ERROR:
+        cached = self.cache.get_many(keys)
+        for key, value in cached.iteritems():
+            if isinstance(value, KVFailure) or (value is None and not self.save_none):
                 misses.append(key)
             else:
                 results[key] = value
-
-        pairs = self.db.get_many(keys)
-        self.cache.put_many(pairs)
+        
+        pairs = self.db.get_many(misses)
+        
+        self.cache.put_many(dict((k, v) for k, v in pairs.iteritems() if not isinstance(v, KVFailure)))
+        
         for k, v in pairs.iteritems():
             results[k] = v
         return results

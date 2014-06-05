@@ -1,5 +1,5 @@
 import concurrent.futures as futures
-from keyvalue.cache import Decorator, ERROR
+from keyvalue.cache import Decorator, KVReadError
 import sys
 
 
@@ -22,7 +22,7 @@ def parallelize(func, queries, max_workers=5, timeout=None, trap_exceptions=True
             if future.exception() is not None:
                 if not trap_exceptions:
                     raise future.exception(), None, sys.exc_info()[2]
-                results[q] = ERROR(future.exception())
+                results[q] = KVReadError(future.exception())
             else:
                 results[q] = future.result()
     return results

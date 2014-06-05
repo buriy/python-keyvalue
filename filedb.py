@@ -15,16 +15,23 @@ class FileDB(SimpleKV):
     def get(self, key):
         fn = self.path % self._fn(key)
         if self.clean and os.path.exists(fn):
+            print "FileDB: Refreshing", key
             os.remove(fn)
         if os.path.exists(fn):
-            return cPickle.load(open(fn, 'rb'))
+            val = cPickle.load(open(fn, 'rb'))
+            #print "FileDB: Reading", key, 'as a', type(val)
+            return val
+        else:
+            print "FileDB: Missing", key
         return self.missing
 
     def put(self, key, value):
         fn = self.path % self._fn(key)
-        if value is self.missing:
+        if value is None and os.path.exists(fn):
+            print "FileDB: Removing", key
             os.remove(fn)
         else:
+            print "FileDB: Saving", key, 'as a', type(value)
             cPickle.dump(value, open(fn, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL)
 
     def _fn(self, query):
