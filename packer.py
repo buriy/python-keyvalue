@@ -1,10 +1,10 @@
 from cPickle import HIGHEST_PROTOCOL, loads, dumps
 from zlib import decompress, compress
 
-from keyvalue.cache import KVDecorator
+from keyvalue.cache import Decorator
 
 
-class Packer(KVDecorator):
+class Packer(Decorator):
     def get(self, query):
         val = self.db.get(query)
         if val is not None:

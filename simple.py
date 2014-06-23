@@ -1,4 +1,3 @@
-from keyvalue.cache import KVReadError
 
 
 def uniq(seq):
@@ -7,10 +6,11 @@ def uniq(seq):
         if not i in s:
             yield i
             s.add(i)
+from keyvalue.cache import DBFailure
 
 
 class SimpleKV(object):
-    trap_exceptions = True
+    trap_exceptions = False
 
     def get_many(self, keys):
         results = {}
@@ -20,7 +20,7 @@ class SimpleKV(object):
             except Exception, e:
                 if not self.trap_exceptions:
                     raise
-                results[q] = KVReadError(e)
+                results[q] = DBFailure(e)
         return results
 
     def put_many(self, pairs):

@@ -4,7 +4,7 @@ import warnings
 
 import bloomers
 
-from cache import Cache, NOTFOUND
+from cache import KVCache, MISSING
 
 
 #import atexit
@@ -34,7 +34,7 @@ def BloomDB(filename, num_items, fp2=20):
     return bf
 
 
-class BloomFilter(Cache):
+class BloomFilter(KVCache):
     def __init__(self, db, filename, opts):
         self.db = db
         self.filename = filename
@@ -43,7 +43,7 @@ class BloomFilter(Cache):
     def check(self, query):
         if not self.bloom.contains(query):
             return None
-        return NOTFOUND
+        return MISSING
 
     def save(self, query, value):
         pass

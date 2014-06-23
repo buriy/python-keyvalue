@@ -1,7 +1,5 @@
 import concurrent.futures as futures
-from keyvalue.cache import Decorator, KVReadError
-import sys
-
+from keyvalue.cache import Decorator, DBFailure
 
 def uniq(seq):
     s = set()
@@ -9,9 +7,10 @@ def uniq(seq):
         if not i in s:
             yield i
             s.add(i)
+import sys
 
 
-def parallelize(func, queries, max_workers=5, timeout=None, trap_exceptions=True):
+def parallelize(func, queries, max_workers=5, timeout=None, trap_exceptions=False):
     # copied from example at https://code.google.com/p/pythonfutures/
     results = {}
     with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -22,30 +21,32 @@ def parallelize(func, queries, max_workers=5, timeout=None, trap_exceptions=True
             if future.exception() is not None:
                 if not trap_exceptions:
                     raise future.exception(), None, sys.exc_info()[2]
-                results[q] = KVReadError(future.exception())
+                results[q] = DBFailure(future.exception())
             else:
                 results[q] = future.result()
     return results
 
 
 class ParallelReader(Decorator):
-    def __init__(self, db, workers=5, trap_exceptions=True):
+    TRAP_EXCEPTIONS = False
+
+    def __init__(self, db, workers=5):
         super(ParallelReader, self).__init__(db)
         self.workers = workers
-        self.trap_exceptions = trap_exceptions
 
     def get_many(self, keys):
         return parallelize(self.get, keys, max_workers=self.workers,
-                           trap_exceptions=self.trap_exceptions)
+                           trap_exceptions=self.TRAP_EXCEPTIONS)
 
 
 class ParallelWriter(Decorator):
-    def __init__(self, db, workers=5, trap_exceptions=True):
+    TRAP_EXCEPTIONS = False
+
+    def __init__(self, db, workers=5):
         super(ParallelWriter, self).__init__(db)
         self.workers = workers
-        self.trap_exceptions = trap_exceptions
 
     def put_many(self, items):
         items = {}
         return parallelize(lambda (x, y): self.put(x, y), items.iteritems(),
-                           max_workers=self.workers, trap_exceptions=self.trap_exceptions)
+                           max_workers=self.workers, trap_exceptions=self.TRAP_EXCEPTIONS)

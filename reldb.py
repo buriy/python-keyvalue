@@ -1,8 +1,8 @@
-from keyvalue.cache import NOTFOUND
+from keyvalue.cache import MISSING
 
 
 class RelModel(object):
-    def __init__(self, table, missing=NOTFOUND):
+    def __init__(self, table, missing=MISSING):
         self.table = table
         self.missing = missing
 
@@ -29,7 +29,7 @@ class RelModel(object):
 
 
 class RelKeyModel(object):
-    def __init__(self, table, field='id', missing=NOTFOUND):
+    def __init__(self, table, field='id', missing=MISSING):
         self.table = table
         self.field = field
         self.missing = missing
@@ -43,7 +43,7 @@ class RelKeyModel(object):
     def get_many(self, ids):
         r = {}
         for k in ids:
-            r[k] = self.missing
+            r[k] = []
         for p in self.table.objects.filter(**{self.field + '__in': ids}):
             key = getattr(p, self.field)
             if r.get(key, self.missing) is self.missing:

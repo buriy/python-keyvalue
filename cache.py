@@ -1,20 +1,34 @@
-class KVFailure(object):
-    pass
-
-
-class KVNotFound(KVFailure):
+class Failure(object):  # base class for all exceptions
     def __repr__(self):
-        return "<NOTFOUND>"
+        return "<A FAILURE>"
 
 
-NOTFOUND = KVNotFound()
+class Missing(Failure):  # singleton
+    def __repr__(self):
+        return "<KEY MISSING>"
 
 
-class KVReadError(Exception, KVFailure):
-    pass
+class DBFailure(Failure):
+    def __init__(self, e):
+        self.e = e
+
+    def __repr__(self):
+        return "<DB FAILURE: %s>" % self.e
 
 
-class KVDecorator(object):
+MISSING = Missing()
+
+
+class Decorator(object):
+    """
+    A base class to fake subclassing using aggregation, which helps
+    to make an instance-based "inheritance" implementation.
+    Copies all methods from "db" *instance* to imitate inheritance,
+    however it doesn't enforce class inheritance syntax,
+    so you may subclass YourDecorator from Decorator,
+    add your methods and then write decorated_db = YourDecorator(db)
+    and have all methods of both YourDecorator and original db accessible.
+    """
     def __init__(self, db):
         self.db = db
 
@@ -27,16 +41,34 @@ class KVDecorator(object):
         return "<%s for %r>" % (self.__class__.__name__, self.db)
 
 
-class Cache(KVDecorator):
-    def __init__(self, db, cache, save_none=False):
-        super(Cache, self).__init__(db)
+class KVCache(Decorator):
+    """
+    A caching wrapper for any KV database.
+    It decorates get() and get_many() in the instance
+    but leaves other methods intact.
+
+    It caches None and [] values by default.
+    If you don't want to do this, change missing parameter
+    or subclass and change is_empty function
+
+    """
+    def __init__(self, db, cache, missing=MISSING):
+        super(KVCache, self).__init__(db)
         self.cache = cache
-        self.save_none = save_none
+        self.missing = missing
+
+    def is_empty(self, value):
+        return isinstance(value, Failure) or (value is self.missing)
 
     def get(self, key):
         value = self.cache.get(key)
-        if isinstance(value, KVFailure) or (value is None and not self.save_none):
-            value = self.db.get(key)
+        print "From cache got:", value
+        if value is not MISSING:
+            return value
+        value = self.db.get(key)
+        if self.is_empty(value):
+            self.cache.delete(key)
+        else:
             self.cache.put(key, value)
         return value
 
@@ -45,17 +77,20 @@ class Cache(KVDecorator):
         misses = []
         cached = self.cache.get_many(keys)
         for key, value in cached.iteritems():
-            if isinstance(value, KVFailure) or (value is None and not self.save_none):
+            if self.is_empty(value):
                 misses.append(key)
             else:
                 results[key] = value
-        
+
         pairs = self.db.get_many(misses)
-        
-        self.cache.put_many(dict((k, v) for k, v in pairs.iteritems() if not isinstance(v, KVFailure)))
-        
+
+        to_cache = {}
         for k, v in pairs.iteritems():
             results[k] = v
+            if not self.is_empty(v):
+                to_cache[k] = v
+
+        self.cache.put_many(to_cache)
         return results
 
     def __repr__(self):

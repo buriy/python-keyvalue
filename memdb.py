@@ -1,4 +1,4 @@
-from keyvalue.cache import NOTFOUND
+from keyvalue.cache import MISSING
 from keyvalue.simple import SimpleKV
 
 
@@ -7,7 +7,7 @@ class MemoryDB(SimpleKV):
         self.cache = {}
 
     def get(self, query):
-        return self.cache.get(query, NOTFOUND)
+        return self.cache.get(query, MISSING)
 
     def put(self, query, value):
         self.cache[query] = value
