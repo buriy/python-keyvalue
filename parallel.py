@@ -1,12 +1,7 @@
 import concurrent.futures as futures
 from keyvalue.cache import Decorator, DBFailure
+from keyvalue.extras import uniq
 
-def uniq(seq):
-    s = set()
-    for i in seq:
-        if not i in s:
-            yield i
-            s.add(i)
 import sys
 
 

@@ -1,12 +1,5 @@
-
-
-def uniq(seq):
-    s = set()
-    for i in seq:
-        if not i in s:
-            yield i
-            s.add(i)
 from keyvalue.cache import DBFailure
+from keyvalue.extras import uniq
 
 
 class SimpleKV(object):
