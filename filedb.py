@@ -1,9 +1,9 @@
 import cPickle
-import os
-import urllib
-
-from keyvalue.cache import MISSING
+from keyvalue.cache import MISSING, Failure
 from keyvalue.simple import SimpleKV
+import os
+import time
+import urllib
 
 
 class FileDB(SimpleKV):
@@ -72,3 +72,22 @@ class FileDB(SimpleKV):
             else:
                 r.append('m' + p)
         return '_'.join(r)
+
+
+class TimedFileDB(FileDB):
+    def __init__(self, path, version=1, refresh=86400):
+        super(TimedFileDB, self).__init__(path, version)
+        self.refresh = refresh
+
+    def get(self, key):
+        value = super(TimedFileDB, self).get(key)
+        if isinstance(value, Failure): # missing
+            return value
+        load_time, data = value
+        delta = time.time() - load_time
+        if delta > self.refresh:
+            return MISSING
+        return data
+
+    def put(self, key, value):
+        value = super(TimedFileDB, self).put(key, (time.time(), value))
