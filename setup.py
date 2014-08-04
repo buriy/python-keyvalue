@@ -4,7 +4,7 @@ import sys
 
 setup(
     name="keyvalue",
-    version="0.2",
+    version="0.2.0.1",
     author="Yuri Baburov",
     author_email="burchik@gmail.com",
     description="simple pythonic key-value DB access, caching and pipes",
