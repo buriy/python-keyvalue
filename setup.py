@@ -11,7 +11,7 @@ setup(
     long_description=open("README.md").read(),
     license="MIT",
     url="http://github.com/buriy/python-keyvalue",
-    packages=['keyvalue'],
+    packages=['keyvalue', 'keyvalue.leveldb', 'keyvalue.bloom', 'keyvalue.redis'],
     classifiers=[
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
