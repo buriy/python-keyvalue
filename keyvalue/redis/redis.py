@@ -16,7 +16,7 @@ class RedisTimedStore(object):
         return zip(queries, self.db.mget([self.prefix + q for q in queries]))
 
     def put(self, query):
-        self.db.set(self.prefix + query, ex=self.timeout)
+        self.db.setex(self.prefix + query, ex=self.timeout)
 
     def put_many(self, queries):
         if not queries:

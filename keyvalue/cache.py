@@ -62,9 +62,8 @@ class KVCache(Decorator):
 
     def get(self, key):
         value = self.cache.get(key)
-        if True:
-            print "Found cached value for the key:", key
         if value is not MISSING:
+            print "Cache %r has value for the key %s" % (self.cache, key)
             return value
         value = self.db.get(key)
         if self.is_empty(value):

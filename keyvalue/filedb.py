@@ -73,6 +73,9 @@ class FileDB(SimpleKV):
                 r.append('m' + p)
         return '_'.join(r)
 
+    def __repr__(self):
+        return "<%s at %r>" % (self.__class__.__name__, self.path)
+
 
 class TimedFileDB(FileDB):
     def __init__(self, path, version=1, refresh=86400):
@@ -90,4 +93,4 @@ class TimedFileDB(FileDB):
         return data
 
     def put(self, key, value):
-        value = super(TimedFileDB, self).put(key, (time.time(), value))
+        super(TimedFileDB, self).put(key, (time.time(), value))
