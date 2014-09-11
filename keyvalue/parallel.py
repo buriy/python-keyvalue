@@ -1,5 +1,5 @@
 import concurrent.futures as futures
-from keyvalue.cache import Decorator, DBFailure
+from keyvalue.cache import Decorator, FailedWithException
 from keyvalue.extras import uniq
 
 import sys
@@ -16,7 +16,7 @@ def parallelize(func, queries, max_workers=5, timeout=None, trap_exceptions=Fals
             if future.exception() is not None:
                 if not trap_exceptions:
                     raise future.exception(), None, sys.exc_info()[2]
-                results[q] = DBFailure(future.exception())
+                results[q] = FailedWithException(future.exception())
             else:
                 results[q] = future.result()
     return results

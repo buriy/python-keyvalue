@@ -8,12 +8,10 @@ class Missing(Failure):  # singleton
         return "<KEY MISSING>"
 
 
-class DBFailure(Failure):
-    def __init__(self, e):
-        self.e = e
-
-    def __repr__(self):
-        return "<DB FAILURE: %s>" % self.e
+class FailedWithException(Exception, Failure):
+    pass
+    #def __repr__(self):
+    #    return "<FAILED with exception: %s>" % self.message
 
 
 MISSING = Missing()

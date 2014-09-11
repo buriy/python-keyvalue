@@ -1,4 +1,4 @@
-from keyvalue.cache import DBFailure
+from keyvalue.cache import FailedWithException
 from keyvalue.extras import uniq
 
 
@@ -13,7 +13,7 @@ class SimpleKV(object):
             except Exception, e:
                 if not self.trap_exceptions:
                     raise
-                results[q] = DBFailure(e)
+                results[q] = FailedWithException(e)
         return results
 
     def put_many(self, pairs):

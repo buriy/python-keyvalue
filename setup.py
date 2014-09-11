@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="keyvalue",
-    version="0.2.0.5",
+    version="0.2.1",
     author="Yuri Baburov",
     author_email="burchik@gmail.com",
     description="simple pythonic key-value DB access, caching and pipes",
